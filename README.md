@@ -222,3 +222,42 @@ public class CaptchaManager : MonoBehaviour
 - EventMessenger : GameShield에서 보안 위협 탐지, 시스템 알림, 내부 이벤트 전송 등을 중앙에서 통합 관리하는 싱글톤 기반의 중앙 이벤트 메신저(Event Bus) 시스템
 
 보안 탐지 모듈(MemoryProtector, SpeedHackDetector, InjectionScanner 등)이 각각 개별 이벤트를 노출하는 대신, 중앙의 EventMessenger를 통해 Payload(데이터 패키지) 형태로 알림을 발행(Publish)하고 수신(Subscribe)하도록 설계되어 있습니다.
+```csharp
+using GameShield;
+using UnityEngine;
+
+public class SecurityEventListener : MonoBehaviour
+{
+    private void OnEnable()
+    {
+        // SecurityWarningPayload 타입의 보안 경고 이벤트 구독
+        EventMessenger.Main.Subscribe<SecurityWarningPayload>(OnSecurityWarning);
+    }
+
+    private void OnDisable()
+    {
+        // 메모리 누수 방지를 위한 구독 해제
+        EventMessenger.Main.Unsubscribe<SecurityWarningPayload>(OnSecurityWarning);
+    }
+
+    // 이벤트 발생 시 호출될 콜백 메서드
+    private void OnSecurityWarning(SecurityWarningPayload payload)
+    {
+        Debug.LogWarning($"[보안 경고 수신] {payload.Type}: {payload.Message}");
+
+        // 경고 타입에 따른 분기 처리
+        switch (payload.Type)
+        {
+            case SecurityWarningType.MemoryTampered:
+                Debug.LogError("메모리 변조가 감지되었습니다!");
+                break;
+            case SecurityWarningType.SpeedHack:
+                Debug.LogError("스피드핵이 감지되었습니다!");
+                break;
+            case SecurityWarningType.Injection:
+                Debug.LogError("외부 코드/DLL 주입이 감지되었습니다!");
+                break;
+        }
+    }
+}
+```
